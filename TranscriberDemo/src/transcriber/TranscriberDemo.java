@@ -19,7 +19,7 @@ public class TranscriberDemo {
         configuration.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
         configuration.setSampleRate(16000);
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(configuration);
-		InputStream stream = new FileInputStream(new File("tale1_hd.wav"));
+		InputStream stream = new FileInputStream(new File("tale1.wav"));
 	
 	    recognizer.startRecognition(stream);
 		SpeechResult result;
