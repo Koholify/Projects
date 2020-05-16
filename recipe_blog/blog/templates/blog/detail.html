@@ -1,0 +1,19 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}{{recipe.recipe_name}}{% endblock %}
+
+{% block content %}
+<h1 class="recipe-title">{{recipe.recipe_name}}</h1>
+<h3 class="subtitle">Ingredients</h3>
+<ul class="ingredient-list">
+    {% for ingredient in recipe.ingredient_set.all %}
+        <li>{{ingredient.ingredient_amount}} {{ingredient.ingredient_name}}</li>
+    {% endfor %}
+</ul>
+<h3 class="subtitle">Insructions</h3>
+<ol class="instruction-list">
+    {% for instruction in recipe.instruction_set.all %}
+        <li>{{instruction.instruction_step}}</li>
+    {% endfor %}
+</ol>
+{% endblock %}

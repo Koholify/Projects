@@ -1,0 +1,98 @@
+@font-face {
+    font-family: ingredient-font;
+    src: url("fonts/iCiel Altus Serif.ttf")
+}
+body {
+    margin: 0; 
+    background-color: slateblue;
+}
+
+div.navbar {
+    position: relative;
+    left: 0;
+    display: flex; 
+    flex-direction: row;
+    background-color: plum;
+    justify-content: space-evenly;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+div.navbar span {
+    display: inline-flex;
+    height: 50px;
+    width: 25%;
+    justify-content: center;
+    align-items: center;
+    font-size: 2em;
+}
+div.navbar span:hover {
+    background-color: aquamarine;
+}
+
+.recipe-list {
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    margin-right: 0;
+    margin-left: 0;
+    padding: 0;
+    width: 100%;
+    left: 0;
+    top: 5em;
+}
+
+.recipe-list a {
+    display: flex;
+    color: white;
+    font-size: xx-large;
+    text-decoration: none;
+    margin: 0;
+    padding: 0;
+    width: 20%;
+    height: 200px;
+}
+
+.recipe-list a li {
+    position: absolute;
+    list-style: disc;
+    display: flex;
+    flex-direction: column;
+    border: thick solid white;
+    justify-content: center;
+    align-items: center;
+    height: 95%;
+    width: 20%;
+    margin: 0;
+    padding: 0;
+}
+
+.recipe-title {
+    text-align: center;
+    font-size: 4em;
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+}
+
+.subtitle, .ingredient-list, .instruction-list {
+    font-family: ingredient-font;
+    margin: 1em;
+
+}
+
+.subtitle {
+    color: darkblue;
+    font-size: 2.5em;    
+}
+
+.ingredient-list, .instruction-list {
+    background-color: darkblue;
+    color: white;
+    padding: 5px;
+    list-style-position: inside;
+    font-size: 2em;
+}
+
+.ingredient-list li, .instruction-list li {
+    margin: 10px;
+}

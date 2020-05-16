@@ -1,0 +1,18 @@
+{% extends 'blog/base.html' %}
+
+{% block title %} My Profile {% endblock %}
+
+{% block content %}
+<h1>My Profile</h1>
+<hr>
+<div class="info">
+    <p>Name: {{user.username}}</p>
+    <p>E-mail: {{user.email}}</p>
+    <form action="{% url 'blog:changepassword' %}" method="POST">
+        {% csrf_token %}
+        {{ form }}
+        <input type="submit" value="Save Changes">
+    </form>
+</div>
+
+<script src="{% static 'blog/match.js' %}"></script>
