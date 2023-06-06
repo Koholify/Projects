@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<img src="Images/grid.png" id="grid" hidden></img>
+<img src="Images/darkwood1_0.jpg" id="table" hidden></img>
+<body>
+    <label style="display: inline;" for="ambient">Ambient:</label>
+    <input id="ambient" type="range" min=0 max=100 value=60 name="ambient"/>
+    <p style="display: inline;"id="check"></p>
+    <br>
+    <canvas id="gl-canvas" width=1024 height=576></canvas>
+    <br>
+    
+    <div>
+        
+        <div>
+        <h3>Controls:</h3>
+        <p>
+            W: forward S: backward A: rotate left D: rotate right<br>
+            X: Undo P: Pick view L: Change Light T: Change View G: Gooch Shading
+        </p>
+        </div>
+    </div>
+    <script src="MV.js"></script>
+    <script src="initShaders.js"></script>
+    <script src="readSTL.js"></script>
+    <script src="Lighting.js"></script>
+    <script src="input.js"></script>
+    <script src="InteractiveObjects.js"></script>
+    <script src="chess.js"></script>
+    <script src="game.js"></script>
+</body>
+
+<script id="picker-vertex-shader" type="x-shader/x-vertex">
+#version 300 es
+
+in vec4 vPosition;
+
+uniform mat4 projectionMat;
+uniform mat4 modelViewMat;
+uniform mat4 cameraMV;
+uniform vec4 oColor;
+
+flat out vec4 aColor;
+out vec2 texCoord;
+
+void main()
+{
+    gl_Position = projectionMat * cameraMV * modelViewMat * vPosition;
+
+    aColor = oColor;
+    aColor.a = 1.0;
+    texCoord = vec2(0.0,0.0);
+}
+</script>
+
+
+<script id="flat-fragment-shader" type="x-shader/x-fragment">
+    #version 300 es
+    
+    precision mediump float;
+    flat in vec4 aColor;
+    in vec2 texCoord;
+    out vec4 fColor;
+    
+    void main()
+    {
+        fColor = aColor;
+    }
+</script>
+
+<script id="flat-vertex-shader" type="x-shader/x-vertex">
+#version 300 es
+#define LIGHT_COUNT 8
+
+in vec4 vPosition;
+in vec4 vNormal;
+in vec2 vTexCoord;
+
+uniform mat4 projectionMat;
+uniform mat4 modelViewMat;
+uniform mat4 cameraMV;
+uniform vec4 cPosition;
+uniform mat3 normalMat;
+
+uniform vec4 diffuseProduct[LIGHT_COUNT];
+uniform vec4 ambientProduct[LIGHT_COUNT];
+uniform vec4 specularProduct[LIGHT_COUNT];
+uniform vec4 lPosition[LIGHT_COUNT];
+uniform float shininess;
+
+flat out vec4 aColor;
+out vec2 texCoord;
+
+void main()
+{
+    gl_Position = projectionMat * cameraMV * modelViewMat * vPosition;
+
+    vec4 pos = (projectionMat * modelViewMat * vPosition);
+    vec3 n = normalize(normalMat * vNormal.xyz);
+    vec3 v = normalize(cPosition - pos).xyz;
+
+    aColor = vec4(0,0,0,1);
+    for(int i = 0; i < LIGHT_COUNT; i++) {
+        vec3 l = normalize(lPosition[i] - pos).xyz;
+        vec3 h = normalize(l + v).xyz;
+        vec4 ambient = ambientProduct[i];
+        vec4 diffuse = vec4(0,0,0,1), specular = vec4(0,0,0,1);
+    
+        float kd = dot(l, n);
+        if(kd > 0.0) {
+            diffuse = kd * diffuseProduct[i];
+            float ks = dot(n, h);
+            if(ks > 0.0) {
+                ks = pow(ks, shininess);
+                specular = ks * specularProduct[i];
+            }
+        }
+        vec4 col = ambient + diffuse + specular;
+        aColor = aColor + col;
+    }
+
+    aColor.a = 1.0;
+    texCoord = vTexCoord;
+}
+
+</script>
+
+<script id="gooch-vertex-shader" type="x-shader/x-vertex">
+    #version 300 es
+    #define LIGHT_COUNT 8
+    
+    in vec4 vPosition;
+    in vec4 vNormal;
+    
+    uniform mat4 projectionMat;
+    uniform mat4 modelViewMat;
+    uniform mat4 cameraMV;
+    uniform vec4 cPosition;
+    uniform mat3 normalMat;
+    
+    uniform vec4 lPosition[LIGHT_COUNT];
+    
+    out float NdotL[LIGHT_COUNT];
+    out vec3 ReflectVec[LIGHT_COUNT];
+    out vec3 ViewVec;
+    
+    void main()
+    {
+        gl_Position = projectionMat * cameraMV * modelViewMat * vPosition;
+    
+        vec4 pos = (projectionMat * modelViewMat * vPosition);
+        vec3 n = normalize(normalMat * vNormal.xyz);
+        vec3 ViewVec = normalize(cPosition - pos).xyz;
+    
+        for(int i = 0; i < LIGHT_COUNT; i++) {
+            vec3 l = normalize(lPosition[i] - pos).xyz;
+            ReflectVec[i] = normalize(l + ViewVec).xyz;
+            NdotL[i] = dot(n, l);
+        }
+    }
+    
+    </script>
+
+<script id="gooch-frag-shader" type="x-shader/x-fragment">
+    #version 300 es
+    #define LIGHT_COUNT 8
+
+    // Original author: Randi Rost
+    // Copyright (c) 2002-2005 3Dlabs Inc. Ltd.
+
+    precision mediump float;
+
+    uniform vec4 oColor;
+    float DiffuseCool = 0.7;
+    float DiffuseWarm = 0.7;
+    vec3 Cool = vec3(0.2, 0.1, 0.6);
+    vec3 Warm = vec3(0.6, 0.2, 0.0);
+    in float NdotL[LIGHT_COUNT];
+    in vec3 ReflectVec[LIGHT_COUNT];
+    in vec3 ViewVec;
+    out vec4 result;
+    
+    void main()
+    {
+        vec3 kcool = min(Cool + DiffuseCool * oColor.xyz, 1.0);
+        vec3 kwarm = min(Warm + DiffuseWarm * oColor.xyz, 1.0);
+        result = vec4(0.0, 0.0, 0.0, 1.0);
+        for(int i = 0; i < LIGHT_COUNT; i++) {
+            vec3 kfinal = mix(kcool, kwarm, NdotL[i]);
+            vec3 nRefl = normalize(ReflectVec[i]);
+            vec3 nview = normalize(ViewVec);
+            float spec = pow(max(dot(nRefl, nview), 0.0), 0.5);
+
+            if (NdotL[i] > 0.0) {
+                result = result + vec4(min(kfinal + spec, 1.0), 1.0);
+            } else {
+                result = result + vec4(0.0, 0.0, 0.0, 1.0);
+            }
+        }
+        result = result / 7.0;
+        result.a = 1.0;
+    }
+</script>
+
+<script id="tex-fragment-shader" type="x-shader/x-fragment">
+    #version 300 es
+    
+    precision mediump float;
+    flat in vec4 aColor;
+    in vec2 texCoord;
+    out vec4 fColor;
+    
+    uniform sampler2D textureMap;
+    
+    void main()
+    {
+        fColor = aColor * texture(textureMap, texCoord);
+    }
+    </script>
